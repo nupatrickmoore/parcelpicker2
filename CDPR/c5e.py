@@ -1,4 +1,7 @@
 
+#TODO constants
+HALT_SLOW_RAMP = 1
+HALT_QUICK_RAMP = 2
 
 class Driver():
 
@@ -6,9 +9,7 @@ class Driver():
     #TODO position buffer? internal buffer limmited 
     #TODO what power states matter
 
-    #TODO constants
-    HALT_SLOW_RAMP = 1
-    HALT_QUICK_RAMP = 2
+
 
     def __init__(self, can_id):
         '''
@@ -21,18 +22,18 @@ class Driver():
         pass #TODO
 
     def goto(self, pos, relative = False,  
-             speed = self.max_speed, accel = self.max_accel, jerk = self.max_jerk):
+             speed = None, accel = None, jerk = None):
         '''
         Set target position immediatly with optional speed, acceleration and jerk
         '''
-        self.max_speed = speed
-        self.max_accel = accel
-        self.max_jerk = jerk
+        if speed is not None: self.max_speed = speed
+        if accel is not None: self.max_accel = accel
+        if jerk is not None: self.max_jerk = jerk
 
         pass #TODO
 
 
-    def halt(self, mode = self.HALT_QUICK_RAMP):
+    def halt(self, mode = HALT_QUICK_RAMP):
         '''
         Stops the motor (6040h Bit 8, 605D)
         '''
@@ -82,7 +83,7 @@ class Driver():
         #TODO send command to change max acceleration
         self._max_accel = value
 
-            @property
+    @property
     def max_jerk(self):
         return self._max_jerk
 
