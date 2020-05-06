@@ -39,6 +39,12 @@ class Driver():
         '''
         pass #TODO
 
+    def shutdown(self):
+        '''
+        Shuts down the drive 
+        '''
+        pass #TODO
+
     def get_torque(self):
         '''
         Get the current actual torque on the motor
