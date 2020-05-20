@@ -27,7 +27,6 @@ node.sdo[0x607A].raw = 3000     # target position is stored in 0x607A
 node.sdo[0x6081].raw = 50       # target velocity is stored in 0x60FF
 time.sleep(0.1)
 
-
 node.sdo[0x6040].raw = 95  # bit 4 = 1 new travel command problem
 time.sleep(0.1)
 
