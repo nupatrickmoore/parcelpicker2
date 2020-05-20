@@ -28,9 +28,11 @@ class Driver():
         self.node.rpdo.read()
         time.sleep(0.1)
 
+        self._max_jerk = 0
+        self._max_accel = 0
+        self._max_speed = 0
         self.max_speed = max_speed
         self.max_accel = max_accel
-        self._max_jerk = 0
         self.max_jerk = max_jerk
 
         #setup the trajectory queue and its worker thread
@@ -57,7 +59,7 @@ class Driver():
         halt =         0b100000000
         pass_pos =    0b1000000000
         '''
-        controlword = 0b0011111 # bit 4 = 1 new travel command problem
+        controlword = 0b0111111 # bit 4 = 1 new travel command problem
         if relative: controlword |= 0b1000000 #adds bit 6 if relative 
         self.node.sdo[0x6040].raw = controlword 
         time.sleep(0.1)
@@ -69,8 +71,9 @@ class Driver():
         '''
         Return wether or not the motor is at its target
         '''
-        #return 10th bit of 6041h
-        return bool(0b10000000000 & self.node.sdo[0x6041].raw) 
+
+        #return 10th bit of 6040h
+        return bool(0b10000000000 & self.node.sdo[0x6041].raw)
 
     def halt(self, halt):
         '''
