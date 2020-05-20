@@ -5,6 +5,7 @@ import canopen
 
 #TODO constants
 #TODO blocking and is_at_target
+#TODO state change delay while checking
 HALT_SLOW_RAMP = 1
 HALT_QUICK_RAMP = 2
 
@@ -58,7 +59,7 @@ class Driver():
         pass_pos =    0b1000000000
         '''
         controlword = 0b0011111 # bit 4 = 1 new travel command problem
-        if relative: controlword | 0b1000000 #adds bit 6 if relative 
+        if relative: controlword |= 0b1000000 #adds bit 6 if relative 
         self.node.sdo[0x6040].raw = controlword 
         time.sleep(0.1)
 
