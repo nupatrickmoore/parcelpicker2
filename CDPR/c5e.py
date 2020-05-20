@@ -37,7 +37,6 @@ class Driver():
         if use_buffer:
             self.trajectory_queue = queue.Queue() #https://docs.python.org/3/library/queue.html#queue-objects
             threading.Thread(target=self._trajectory_handler, daemon=True).start()
-        
         logging.info("Initialized c5e with id: %d"%can_id)
 
     def goto(self, pos, relative = False, blocking=True, 
@@ -66,14 +65,12 @@ class Driver():
         while(not self.is_at_target() and blocking):
             time.sleep(0.001) #idle checking at 1khz
 
-        #TODO test
-
     def is_at_target(self):
         '''
         Return wether or not the motor is at its target
         '''
-        #return 10th bit of 6040h
-        return bool(0b10000000000 & self.node.sdo[0x6040].raw) #TODO test
+        #return 10th bit of 6041h
+        return bool(0b10000000000 & self.node.sdo[0x6041].raw) 
 
     def halt(self, halt):
         '''
@@ -91,7 +88,6 @@ class Driver():
         '''
         self.node.sdo[0x6040].raw = 0b00110
         logging.info("Shutdown drive %d"%self.can_id)
-        #TODO test
 
     def enable(self):
         '''
@@ -106,7 +102,6 @@ class Driver():
         self.node.sdo[0x6040].raw = 0b1111   # operation enabled
         time.sleep(0.1)
         logging.info("Enabled drive %d"%self.can_id)
-        #TODO test
 
     def get_torque(self):
         '''
@@ -170,7 +165,6 @@ class Driver():
             return
         self.node.sdo[0x6081].raw = value
         self._max_speed = value
-        #TODO test
 
     @property
     def max_accel(self):
