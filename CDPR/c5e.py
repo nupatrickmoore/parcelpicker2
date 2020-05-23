@@ -3,15 +3,15 @@ import logging
 import time
 import canopen
 
-#TODO constants
+
 #TODO blocking and is_at_target
 #TODO state change delay while checking
-HALT_SLOW_RAMP = 1
-HALT_QUICK_RAMP = 2
 
 class Driver():
     #TODO why all the sleeps?
     #TODO if goto do we clear buffer? how might we want to manipulate buffer? 
+
+    SDO_DELAY_RATE = 0.02
 
     def __init__(self, can_network: canopen.Network, can_id, use_buffer=False, max_speed=50, max_accel=500, max_jerk=0):
         '''
@@ -23,10 +23,9 @@ class Driver():
         # Add node to network TODO: scan for and add node
         self.node = canopen.RemoteNode(can_id, 'C5-E-1-09.eds')
         can_network.add_node(self.node)
-        can_network.sync.start(0.1) #TODO can this be called by every driver?
         self.node.tpdo.read() # checks if configured properly
         self.node.rpdo.read()
-        time.sleep(0.1)
+        time.sleep(self.SDO_DELAY_RATE)
 
         self._max_jerk = 0
         self._max_accel = 0
@@ -50,7 +49,7 @@ class Driver():
         if speed is not None: self.max_speed = speed
         if accel is not None: self.max_accel = accel
         if jerk is not None: self.max_jerk = jerk
-        time.sleep(0.1)
+        time.sleep(self.SDO_DELAY_RATE)
 
         #create controlword with optional parameters
         '''
@@ -62,10 +61,10 @@ class Driver():
         controlword = 0b0111111 # bit 4 = 1 new travel command problem
         if relative: controlword |= 0b1000000 #adds bit 6 if relative 
         self.node.sdo[0x6040].raw = controlword 
-        time.sleep(0.1)
+        time.sleep(self.SDO_DELAY_RATE)
 
         while(not self.is_at_target() and blocking):
-            time.sleep(0.001) #idle checking at 1khz
+            time.sleep(self.SDO_DELAY_RATE) #idle checking at 1khz
 
     def is_at_target(self):
         '''
@@ -97,13 +96,13 @@ class Driver():
         Puts drive into operational state
         '''
         self.node.sdo[0x6040].raw = 0b110    # ready to switch state
-        time.sleep(0.1)
+        time.sleep(self.SDO_DELAY_RATE)
         self.node.sdo[0x6060].raw = 0b1      # Set mode of operation to profile position
-        time.sleep(0.1)
+        time.sleep(self.SDO_DELAY_RATE)
         self.node.sdo[0x6040].raw = 0b111    # switched on
-        time.sleep(0.1)
+        time.sleep(self.SDO_DELAY_RATE)
         self.node.sdo[0x6040].raw = 0b1111   # operation enabled
-        time.sleep(0.1)
+        time.sleep(self.SDO_DELAY_RATE)
         logging.info("Enabled drive %d"%self.can_id)
 
     def get_torque(self):
