@@ -1,5 +1,5 @@
 import c5e
-import math_model
+from math_model import BB_movement
 import logging
 import canopen
 import time
@@ -22,7 +22,7 @@ class CDPR():
             self.motors.append(motor)
         self.network.sync.start(0.1) 
 
-        #TODO home
+        self._position = (0, 0, 0) #TODO home
 
     def __del__(self):
         #shuts down when destroyed
@@ -36,23 +36,25 @@ class CDPR():
         self.network.disconnect()
         #TODO test, (possibly home?)
         
-    def goto(self, position, cycle_time, relative=False, blocking=True):
+    def goto(self, position, accel_max, relative=True, blocking=True):
 
-        #TODO determine init_position
-
+        #determine movement to make, absolute or relative
+        init_pos = self._position
         if relative:
             end_pos = init_pos + position
         else:
             end_pos = position
-
-        rel_pos_int, motor_speed_int = math_model.oneshot_movement(init_pos, end_pos, cycle_time)
+        self._position = end_pos
+        
+        rel_pos_int, motor_speed_int, motor_accel, motor_deccel, cycle_time = BB_movement(init_pos, end_pos, accel_max)
+        logging.debug("Moving with cycle time of: %.2f"%cycle_time)
 
         for idx, motor in enumerate(self.motors):
-            motor.goto(rel_pos_int[idx], relative=True, blocking=False, speed=motor_speed_int[idx])
+            motor.goto(rel_pos_int[idx], relative=True, blocking=False, speed=motor_speed_int[idx], acceleration=motor_accel[idx], deceleration=motor_deccel[idx])
 
         while(not self.is_at_target() and blocking):
             time.sleep(0.001) #idle checking at 1khz
-        #TODO
+        #TODO test
 
     def is_at_target(self):
         for motor in self.motors:

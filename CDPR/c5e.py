@@ -13,7 +13,7 @@ class Driver():
 
     SDO_DELAY_RATE = 0.02
 
-    def __init__(self, can_network: canopen.Network, can_id, use_buffer=False, max_speed=50, max_accel=500, max_jerk=0):
+    def __init__(self, can_network: canopen.Network, can_id, use_buffer=False, max_speed=50, max_accel=500, max_deccel=500, max_jerk=0):
         '''
         Initialise controller and put into switched on state
         '''
@@ -29,9 +29,11 @@ class Driver():
 
         self._max_jerk = 0
         self._max_accel = 0
+        self._max_deccel = 0
         self._max_speed = 0
         self.max_speed = max_speed
         self.max_accel = max_accel
+        self.max_deccel = max_deccel
         self.max_jerk = max_jerk
 
         #setup the trajectory queue and its worker thread
@@ -41,13 +43,14 @@ class Driver():
         logging.info("Initialized c5e with id: %d"%can_id)
 
     def goto(self, pos, relative = False, blocking=True, 
-             speed = None, accel = None, jerk = None):
+             speed = None, acceleration = None, deceleration = None, jerk = None):
         '''
         Set target position immediately with optional speed, acceleration and jerk
         '''
         self.node.sdo[0x607A].raw = pos     # target position is stored in 0x607A
         if speed is not None: self.max_speed = speed
-        if accel is not None: self.max_accel = accel
+        if acceleration is not None: self.max_accel = acceleration
+        if deceleration is not None: self.max_deccel = deceleration
         if jerk is not None: self.max_jerk = jerk
         time.sleep(self.SDO_DELAY_RATE)
 
@@ -157,7 +160,8 @@ class Driver():
     ##################################
     ## Properties 
     ##################################
-
+    
+    #Speed property   
     @property
     def max_speed(self):
         return self._max_speed
@@ -168,6 +172,7 @@ class Driver():
         self.node.sdo[0x6081].raw = value
         self._max_speed = value
 
+    #Acceleration property   
     @property
     def max_accel(self):
         return self._max_accel
@@ -177,9 +182,23 @@ class Driver():
             return
         #change acceleration and deacelleration 
         self.node.sdo[0x6083].raw = value
-        self.node.sdo[0x6084].raw = value
         self._max_accel = value
         #TODO test
+
+   #Deceleration property   
+    @property
+    def max_deccel(self):
+        return self._max_deccel
+    @max_deccel.setter
+    def max_deccel(self, value):
+        if value == self.max_deccel:
+            return
+        #change acceleration and deacelleration 
+        self.node.sdo[0x6084].raw = value
+        self._max_deccel = value
+        #TODO test
+
+    #Jerk property   
     @property
     def max_jerk(self):
         return self._max_jerk
