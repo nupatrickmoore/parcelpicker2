@@ -6,9 +6,10 @@ logging.basicConfig(level=logging.INFO)
 
 cdpr = CDPR()
 
-cdpr.goto((1,2,3), 12) 
+print("Moving...")
+cdpr.goto((3,3,3), 30)
 time.sleep(10)
-cdpr.goto((2,2,2), 10)
-cdpr.goto((1,1,1), 10)
+cdpr.goto((-3,-3,-3), 30)
+print("Done!")
 
 #cdpr.shutdown() #should do automatically with end of program
