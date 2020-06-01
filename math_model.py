@@ -87,10 +87,10 @@ def BB_movement(init_pos, end_pos, accel_max):
     rel_pos_s = np.multiply(rel_pos_un, np.array([[1], [-1], [1], [-1]]))   # signed for different motor orientations
     rel_pos_int = np.round(rel_pos_s)
     motor_speed_int = np.round(motor_speed)
-    motor_accel = np.subtract(end_cord_len_scalar, init_cord_len_scalar)* 60 * (4/ (2 * 3.14 * spool_radius * cycle_time**2))
-    motor_deccel = -1 * motor_accel
+    motor_accel = np.abs(np.subtract(end_cord_len_scalar, init_cord_len_scalar)* 60 * (4/ (2 * 3.14 * spool_radius * cycle_time**2)))
+    motor_deccel = motor_accel
     #from here, each print represents values sent to the appropriate register on the drives over CAN
-    return (rel_pos_int, motor_speed_int, motor_accel, motor_deccel, cycle_time)
+    return (rel_pos_int.astype(np.int32), motor_speed_int.astype(np.int32), motor_accel.astype(np.uint32), motor_deccel.astype(np.uint32), cycle_time)
 
 
 

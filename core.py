@@ -3,7 +3,7 @@ from math_model import BB_movement
 import logging
 import canopen
 import time
-
+import numpy as np
 #TODO limmit/monitor torque?
 
 class CDPR():
@@ -19,6 +19,7 @@ class CDPR():
         #create driver objects
         for id in self.can_ids:
             motor = c5e.Driver(self.network, id)
+            motor.enable()
             self.motors.append(motor)
         self.network.sync.start(0.1) 
 
@@ -26,34 +27,38 @@ class CDPR():
 
     def __del__(self):
         #shuts down when destroyed
-        self.shutdown()
+        #self.shutdown() #TODO determine a fix if feature is wanted
+        pass
 
     def shutdown(self):
         logging.info("Shutting Down")
         for motor in self.motors:
             motor.shutdown()
+        time.sleep(1)   #TODO wait for shutdown
         self.network.sync.stop()
         self.network.disconnect()
-        #TODO test, (possibly home?)
+        #TODO test, (possibly home?), not error if already shut down
         
     def goto(self, position, accel_max, relative=True, blocking=True):
 
         #determine movement to make, absolute or relative
         init_pos = self._position
         if relative:
-            end_pos = init_pos + position
+            end_pos = np.add(init_pos, position)
         else:
             end_pos = position
         self._position = end_pos
         
         rel_pos_int, motor_speed_int, motor_accel, motor_deccel, cycle_time = BB_movement(init_pos, end_pos, accel_max)
-        logging.debug("Moving with cycle time of: %.2f"%cycle_time)
+        logging.info("Moving with cycle time of: %.2f"%cycle_time)
+
 
         for idx, motor in enumerate(self.motors):
             motor.goto(rel_pos_int[idx], relative=True, blocking=False, speed=motor_speed_int[idx], acceleration=motor_accel[idx], deceleration=motor_deccel[idx])
 
         while(not self.is_at_target() and blocking):
             time.sleep(0.001) #idle checking at 1khz
+
         #TODO test
 
     def is_at_target(self):

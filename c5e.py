@@ -2,7 +2,7 @@ import queue, threading
 import logging
 import time
 import canopen
-import sys
+
 
 #TODO blocking and is_at_target
 #TODO state change delay while checking
@@ -10,7 +10,7 @@ import sys
 class Driver():
     #TODO why all the sleeps?
     #TODO if goto do we clear buffer? how might we want to manipulate buffer? 
-
+    #TODO error on movent if not operational state
     SDO_DELAY_RATE = 0.02
 
     def __init__(self, can_network: canopen.Network, can_id, use_buffer=False, max_speed=50, max_accel=500, max_deccel=500, max_jerk=0):
@@ -23,12 +23,8 @@ class Driver():
         # Add node to network TODO: scan for and add node
         self.node = canopen.RemoteNode(can_id, 'C5-E-1-09.eds')
         can_network.add_node(self.node)
-        try:
-            self.node.tpdo.read() # checks if configured properly
-            self.node.rpdo.read()
-        except:
-            sys.exit("Drive %d cannot be configured. Is it powered and connected?"%self.can_id)
-
+        self.node.tpdo.read() # checks if configured properly
+        self.node.rpdo.read()
         time.sleep(self.SDO_DELAY_RATE)
 
         self._max_jerk = 0
@@ -96,6 +92,7 @@ class Driver():
         Shuts down the drive, into low power state
         '''
         self.node.sdo[0x6040].raw = 0b00110
+        time.sleep(self.SDO_DELAY_RATE)
         logging.info("Shutdown drive %d"%self.can_id)
 
     def enable(self):
