@@ -74,7 +74,9 @@ class CDPR():
         return False #TODO
 
     def grab(self):
-        pass #TODO
+        motors[0].set_output(2, True)
+        #TODO test
 
     def release(self):
-        pass #TODO
+        motors[0].set_output(2, False)
+        #TODO test

@@ -130,9 +130,20 @@ class Driver():
         return self.node.sdo[0x6064].raw
         #TODO test
 
-    ##################################
-    ## Buffered Trajectory 
-    ##################################
+    def set_output(self, output, state):
+        '''
+        Sets a provided output (1-15) to a given state (1,0 or True,False)
+        '''
+        if state:
+            self.node.sdo[0x60FE].raw |= 1 << (output+15)
+        else
+            self.node.sdo[0x60FE].raw &= ~(1 << (output+15))
+        #TODO test
+
+
+##################################
+## Buffered Trajectory 
+##################################
 
     def append_trajectory(self, pos, relative = False,  
                       speed = None, accel = None, jerk = None):
@@ -158,9 +169,9 @@ class Driver():
             '''
             pass
 
-    ##################################
-    ## Properties 
-    ##################################
+##################################
+## Properties 
+##################################
     
     #Speed property   
     @property
@@ -186,7 +197,7 @@ class Driver():
         self._max_accel = value
         #TODO test
 
-   #Deceleration property   
+    #Deceleration property   
     @property
     def max_deccel(self):
         return self._max_deccel
