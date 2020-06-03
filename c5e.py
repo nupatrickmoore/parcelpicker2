@@ -2,7 +2,7 @@ import queue, threading
 import logging
 import time
 import canopen
-
+import sys
 
 #TODO blocking and is_at_target
 #TODO state change delay while checking
@@ -23,8 +23,11 @@ class Driver():
         # Add node to network TODO: scan for and add node
         self.node = canopen.RemoteNode(can_id, 'C5-E-1-09.eds')
         can_network.add_node(self.node)
-        self.node.tpdo.read() # checks if configured properly
-        self.node.rpdo.read()
+        try:
+            self.node.tpdo.read() # checks if configured properly
+            self.node.rpdo.read()
+        except:
+            sys.exit(f"Drive {self.can_id} failed to configure. Turn on or restart the device")
         time.sleep(self.SDO_DELAY_RATE)
 
         self._max_jerk = 0
