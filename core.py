@@ -23,7 +23,7 @@ class CDPR():
             self.motors.append(motor)
         self.network.sync.start(0.1) 
 
-        self._position = (0, 0, 0) #TODO home
+        self._position = (0, 4, 0) #TODO home
 
     def __del__(self):
         #shuts down when destroyed
@@ -59,13 +59,11 @@ class CDPR():
         while(not self.is_at_target() and blocking):
             time.sleep(0.001) #idle checking at 1khz
 
-        #TODO test
-
     def is_at_target(self):
         for motor in self.motors:
             if not motor.is_at_target():
                 return False
-        return True #TODO
+        return True
 
     def home(self):
         pass #TODO

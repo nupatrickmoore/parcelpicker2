@@ -4,13 +4,10 @@ import time
 import canopen
 import sys
 
-#TODO blocking and is_at_target
 #TODO state change delay while checking
 
 class Driver():
-    #TODO why all the sleeps?
-    #TODO if goto do we clear buffer? how might we want to manipulate buffer? 
-    #TODO error on movent if not operational state
+    #TODO error on movent if not operational state, and report current state (statusword tranlator)
     SDO_DELAY_RATE = 0.02
 
     def __init__(self, can_network: canopen.Network, can_id, use_buffer=False, max_speed=50, max_accel=500, max_deccel=500, max_jerk=0):
@@ -20,7 +17,7 @@ class Driver():
         self.can_network = can_network
         self.can_id = can_id
         
-        # Add node to network TODO: scan for and add node
+        # Add node to network TODO: scan for and add node (Pat what is this?)
         self.node = canopen.RemoteNode(can_id, 'C5-E-1-09.eds')
         can_network.add_node(self.node)
         try:
@@ -39,6 +36,9 @@ class Driver():
         self.max_deccel = max_deccel
         self.max_jerk = max_jerk
 
+        # Enable controlword bit 4 release when at target
+        self.node.sdo[0x60F2].raw = 0b10001
+
         #setup the trajectory queue and its worker thread
         if use_buffer:
             self.trajectory_queue = queue.Queue() #https://docs.python.org/3/library/queue.html#queue-objects
@@ -51,6 +51,7 @@ class Driver():
         Set target position immediately with optional speed, acceleration and jerk
         '''
         self.node.sdo[0x607A].raw = pos     # target position is stored in 0x607A
+        #print(pos) #DEBUG
         if speed is not None: self.max_speed = speed
         if acceleration is not None: self.max_accel = acceleration
         if deceleration is not None: self.max_deccel = deceleration
@@ -85,9 +86,9 @@ class Driver():
         Stops the motor (6040h Bit 8, 605D)
         '''
         if halt: 
-            self.node.sdo[0x6040].raw |= 0b100000000 #set bit 8 to 1
+            self.node.sdo[0x6040].raw |= 0b100000000    #set bit 8 to 1
         else:
-            self.node.sdo[0x6040].raw &= ~0b100000000 #set bit 8 to 0
+            self.node.sdo[0x6040].raw &= ~0b100000000   #set bit 8 to 0
         #TODO test 
 
     def shutdown(self):
@@ -133,13 +134,13 @@ class Driver():
         return self.node.sdo[0x6064].raw
         #TODO test
 
-    def set_output(self, output, state):
+    def set_output(self, output, state): #for use with EE functionality
         '''
         Sets a provided output (1-15) to a given state (1,0 or True,False)
         '''
         if state:
             self.node.sdo[0x60FE].raw |= 1 << (output+15)
-        else
+        else:
             self.node.sdo[0x60FE].raw &= ~(1 << (output+15))
         #TODO test
 
@@ -198,7 +199,6 @@ class Driver():
         #change acceleration and deacelleration 
         self.node.sdo[0x6083].raw = value
         self._max_accel = value
-        #TODO test
 
     #Deceleration property   
     @property
@@ -211,7 +211,6 @@ class Driver():
         #change acceleration and deacelleration 
         self.node.sdo[0x6084].raw = value
         self._max_deccel = value
-        #TODO test
 
     #Jerk property   
     @property
