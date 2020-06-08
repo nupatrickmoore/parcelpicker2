@@ -85,11 +85,12 @@ class Driver():
         '''
         Stops the motor (6040h Bit 8, 605D)
         '''
-        if halt: 
+        if halt == 1:
             self.node.sdo[0x6040].raw |= 0b100000000    #set bit 8 to 1
+            #print("halted") #DEBUG
         else:
             self.node.sdo[0x6040].raw &= ~0b100000000   #set bit 8 to 0
-        #TODO test 
+            #print("unhalted") #DEBUG
 
     def shutdown(self):
         '''
@@ -117,22 +118,22 @@ class Driver():
         '''
         Get the current actual torque on the motor
         '''
+        #print(self.node.sdo[0x6077].raw) #DEBUG
         return self.node.sdo[0x6077].raw   # operation enabled
-        #TODO test
+
+        #TODO reports, but only 0's, might be lack of load
 
     def get_velocity(self):
         '''
         Get the current actual velocity of the motor
         '''
-        return self.node.sdo[0x606B].raw 
-        #TODO test
+        return self.node.sdo[0x606C].raw
 
     def get_position(self):
         '''
         Get the actual position of the motor (closed loop)
         '''
         return self.node.sdo[0x6064].raw
-        #TODO test
 
     def set_output(self, output, state): #for use with EE functionality
         '''

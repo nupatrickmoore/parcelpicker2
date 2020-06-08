@@ -56,6 +56,10 @@ class CDPR():
         for idx, motor in enumerate(self.motors):
             motor.goto(rel_pos_int[idx], relative=True, blocking=False, speed=motor_speed_int[idx], acceleration=motor_accel[idx], deceleration=motor_deccel[idx])
 
+        #time.sleep(0.5) #DEBUG
+        #for motor in self.motors: #DEBUG
+            #print(motor.get_position()) #DEBUG
+
         while(not self.is_at_target() and blocking):
             time.sleep(0.001) #idle checking at 1khz
 
@@ -78,3 +82,15 @@ class CDPR():
     def release(self):
         self.motors[0].set_output(2, False)
         #TODO test
+
+    def stop(self): #method of invoking halt from Goto_test
+        for motor in self.motors:
+            motor.halt(halt=1)
+
+    def unstop(self): #method of invoking halt from Goto_test
+        for motor in self.motors:
+            motor.halt(halt=0)
+
+    def torq_report(self): #reports each motor torque
+        for motor in self.motors:
+            print(motor.get_torque())
