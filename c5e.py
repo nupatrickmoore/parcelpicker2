@@ -3,8 +3,21 @@ import logging
 import time
 import canopen
 import sys
+from enum import Enum
 
 #TODO state change delay while checking
+
+#c5e file constants
+class State(Enum):
+    ERROR = -1
+    NOT_READY_TO_SWITCH = 0
+    SWITCH_DISSABLED = 1
+    READY_TO_SWITCH = 2
+    SWITCHED_ON = 3
+    OPERATION_ENABLED = 4
+    QUICK_STOP = 5
+    FAULT_REACTION = 6
+    FAULT = 7
 
 class Driver():
     #TODO error on movent if not operational state, and report current state (statusword tranlator)
@@ -27,6 +40,7 @@ class Driver():
             sys.exit(f"Drive {self.can_id} failed to configure. Turn on or restart the device")
         time.sleep(self.SDO_DELAY_RATE)
 
+        self._state = 0
         self._max_jerk = 0
         self._max_accel = 0
         self._max_deccel = 0
@@ -39,6 +53,13 @@ class Driver():
         # Enable controlword bit 4 release when at target
         self.node.sdo[0x60F2].raw = 0b10001
 
+        #enable PWM on pin 1
+        self.node.sdo[0x2038][0x05].raw = 50 # set PWM frequency to 50hz (default for RC servo)
+
+        self.node.sdo[0x3250][0x08].raw = 0b1 # enables routing
+        self.node.sdo[0x3252][0x02].raw = 0x1001 #assigns PWM to output 1 controlled by bit 1 of 60FE
+        self.node.sdo[0x60FE][0x01].raw |= 0b10 #enable PWM
+
         #setup the trajectory queue and its worker thread
         if use_buffer:
             self.trajectory_queue = queue.Queue() #https://docs.python.org/3/library/queue.html#queue-objects
@@ -50,6 +71,10 @@ class Driver():
         '''
         Set target position immediately with optional speed, acceleration and jerk
         '''
+
+        if self.get_state() is not State.OPERATION_ENABLED:
+            raise Exception(f"Cannot move in {self.get_state()} state")
+
         self.node.sdo[0x607A].raw = pos     # target position is stored in 0x607A
         #print(pos) #DEBUG
         if speed is not None: self.max_speed = speed
@@ -113,6 +138,28 @@ class Driver():
         self.node.sdo[0x6040].raw = 0b1111   # operation enabled
         time.sleep(self.SDO_DELAY_RATE)
         logging.info("Enabled drive %d"%self.can_id)
+    
+    def get_state(self):
+        state = self.node.sdo[0x6041].raw
+        if (state & 0b01001111) == 0b0: #take the bitmask and see if it then matches a mode
+            return State.NOT_READY_TO_SWITCH
+        elif (state & 0b01001111) == 0b01000000:
+            return State.SWITCH_DISSABLED
+        elif (state & 0b01101111) == 0b0100001:
+            return State.READY_TO_SWITCH
+        elif (state & 0b01101111) == 0b0100011:
+            return State.SWITCHED_ON
+        elif (state & 0b01101111) == 0b0100111:
+            return State.OPERATION_ENABLED
+        elif (state & 0b01101111) == 0b0000111:
+            return State.QUICK_STOP
+        elif (state & 0b01001111) == 0b0001111:
+            return State.FAULT_REACTION
+        elif (state & 0b01001111) == 0b0001000:
+            return State.FAULT
+        else:
+            return State.ERROR
+        #TODO test
 
     def get_torque(self):
         '''
@@ -135,15 +182,13 @@ class Driver():
         '''
         return self.node.sdo[0x6064].raw
 
-    def set_output(self, output, state): #for use with EE functionality
+    def set_output(self, duty): #for use with EE functionality
         '''
-        Sets a provided output (1-15) to a given state (1,0 or True,False)
+        Sets the PWM duty cycle of pin 1 (0,2-100)
         '''
-        if state:
-            self.node.sdo[0x60FE].raw |= 1 << (output+15)
-        else:
-            self.node.sdo[0x60FE].raw &= ~(1 << (output+15))
+        self.node.sdo[0x2038][0x06].raw = duty 
         #TODO test
+
 
 
 ##################################
