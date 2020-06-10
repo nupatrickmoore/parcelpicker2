@@ -1,8 +1,8 @@
 import numpy as np
 
 spool_radius = 0.5
-plat_l = 5 #5
-plat_w = 3.75 #3.75
+plat_l = 5 #5 if Platform, 0 if gimbal mount
+plat_w = 3.75 #3.75 if Platform, 0 if gimbal mount
 anchor_pos = np.array([[-23.5, 20, 8.75], [23.5, 20, 8.75],
                     [23.5, 20, -8.75], [-23.5, 20, -8.75]])
 
@@ -93,12 +93,33 @@ def BB_movement(init_pos, end_pos, accel_max):
     #print(end_cord_len_scalar) #DEBUG
     return (rel_pos_int.astype(np.int32), motor_speed_int.astype(np.int32), motor_accel.astype(np.uint32), motor_deccel.astype(np.uint32), cycle_time)
 
+def SVA_movement(int_vert_pos, end_vert_pos, accel_max):
+    '''
+    Returns relative motor positions, velocities and accelerations when docked, vertical only movement for use with SVA.
+    vertical position of "0" means the EE can be undocked, and SVA should only be able to be called when in the docked position.
+    '''
+    init_cord_len_scalar = int_vert_pos
+    end_cord_len_scalar = end_vert_pos
+    # optimization step: test cycle time at accel_max for each cord, largest becomes global cycle time (not needed for SVA)
+    cycle_time_comp = np.sqrt(abs(np.subtract(end_cord_len_scalar, init_cord_len_scalar)) * 60 * (4 / (2 * 3.14 * spool_radius * accel_max)))
+    cycle_time = np.amax(cycle_time_comp)
+    # Generate target positions(steps), angular velocities (rpm), and angular accelerations (rpm/s)
+    motor_speed = abs(((np.subtract(end_cord_len_scalar, init_cord_len_scalar) * 60) / (cycle_time * 2 * 3.14 * spool_radius)))
+    rel_pos_un = 2000 * (np.subtract(end_cord_len_scalar, init_cord_len_scalar) / (2 * 3.14 * spool_radius))
+    rel_pos_s = np.multiply(rel_pos_un, np.array([[1], [-1], [1], [-1]]))  # signed for different motor orientations
+    rel_pos_int = np.round(rel_pos_s)
+    motor_speed_int = np.round(motor_speed)
+    motor_accel = np.abs(
+        np.subtract(end_cord_len_scalar, init_cord_len_scalar) * 60 * (4 / (2 * 3.14 * spool_radius * cycle_time ** 2)))
+    motor_deccel = motor_accel
+    return (rel_pos_int.astype(np.int32), motor_speed_int.astype(np.int32), motor_accel.astype(np.uint32), motor_deccel.astype(np.uint32), cycle_time)
+    #TODO test
 
 
 if __name__ == '__main__':#will only run if the file is specificall ran, not imported
     #rel_pos_int, motor_speed_int = oneshot_movement((1, 1, 1), (2, 2, 2), 1.5)
     #print(rel_pos_int, motor_speed_int)
-    rel_pos_int, motor_speed_int, motor_accel, motor_deccel, cycle_time = BB_movement((0, 4, 0), (13, 15, 5), 150)
+    rel_pos_int, motor_speed_int, motor_accel, motor_deccel, cycle_time = SVA_movement((0), (-10), 150)
     print(rel_pos_int, motor_speed_int, motor_accel, motor_deccel, cycle_time)
 
     
