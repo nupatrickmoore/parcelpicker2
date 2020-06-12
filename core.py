@@ -4,6 +4,7 @@ import logging
 import canopen
 import time
 import numpy as np
+import serial
 #TODO limmit/monitor torque?
 
 class CDPR():
@@ -82,6 +83,18 @@ class CDPR():
     def release(self):
         self.motors[0].set_output(2, False)
         #TODO test
+
+    def grab_ser(self):
+        ser = serial.Serial('COM4', 9800, timeout=1)  # open serial port for EE controller
+        ser.write(b'L')
+        ser.close()
+        #TODO Test
+
+    def release_ser(self):
+        ser = serial.Serial('COM4', 9800, timeout=1)  # open serial port for EE controller
+        ser.write(b'H')
+        ser.close()
+        #TODO Test
 
     def stop(self): #method of invoking halt from Goto_test
         for motor in self.motors:

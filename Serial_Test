@@ -1,0 +1,7 @@
+import serial
+ser = serial.Serial('COM4', 9800, timeout=1) # open serial port
+ser.write(b'H')
+ser.write(b'L')
+ser.write(b'H')
+ser.write(b'L')
+ser.close
