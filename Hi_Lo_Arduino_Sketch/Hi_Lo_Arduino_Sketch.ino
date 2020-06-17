@@ -1,5 +1,4 @@
 //initialize PWM pin
-const int PWM_pin = 13;
 int Grab_input = 255;  //initalized throw duty cycle
 
 void setup() {
@@ -7,8 +6,10 @@ void setup() {
   // initialize serial communication:
   Serial.begin(9600);
   //Declare PWM as output
-  pinMode(PWM_pin, OUTPUT);
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(3, OUTPUT);
+  pinMode(11, OUTPUT);
+  TCCR2B = TCCR2B & B11111000 | B00000011;
 }
 
 void loop() {
@@ -19,16 +20,19 @@ void loop() {
     Grab_input = Serial.read();
     Serial.print("Received");
     Serial.print('\n');
-    Serial.print(Grab_input);
-    Serial.print('\n');
     if(Grab_input == 'H') {
-      analogWrite(PWM_pin, 255);
-      digitalWrite(LED_BUILTIN, LOW)
+      analogWrite(11, 140);
+      digitalWrite(LED_BUILTIN, LOW);
+      Serial.write('H');
+      Serial.print("HIGH");
+      Serial.print('\n');
     }
     if(Grab_input == 'L') {
-      analogWrite(PWM_pin, 0);
-      digitalWrite(LED_BUILTIN, HIGH)
+      analogWrite(11, 0);
+      digitalWrite(LED_BUILTIN, HIGH);
+      Serial.write('L');
+      Serial.print("LOW");
+      Serial.print('\n');
     }
-    delay(5);
   }
 }

@@ -14,6 +14,7 @@ class CDPR():
 
     def __init__(self):
         #initialise can network
+        self.ser = serial.Serial('COM8', 9800, timeout=1)  # open serial port for EE controller
         self.network = canopen.Network()     # define network
         self.network.connect(channel='PCAN_USBBUS1', bustype='pcan', bitrate=1000000)  # establish communication
         self.network.check()
@@ -22,7 +23,7 @@ class CDPR():
             motor = c5e.Driver(self.network, id)
             motor.enable()
             self.motors.append(motor)
-        self.network.sync.start(0.1) 
+        self.network.sync.start(0.1)
 
         self._position = (0, 4, 0) #TODO home
 
@@ -38,6 +39,7 @@ class CDPR():
         time.sleep(1)   #TODO wait for shutdown
         self.network.sync.stop()
         self.network.disconnect()
+        self.ser.close()
         #TODO test, (possibly home?), not error if already shut down
         
     def goto(self, position, accel_max, relative=True, blocking=True):
@@ -85,16 +87,12 @@ class CDPR():
         #TODO test
 
     def grab_ser(self):
-        ser = serial.Serial('COM4', 9800, timeout=1)  # open serial port for EE controller
-        ser.write(b'L')
-        ser.close()
-        #TODO Test
+        self.ser.write(b'L')
+        time.sleep(4)
 
     def release_ser(self):
-        ser = serial.Serial('COM4', 9800, timeout=1)  # open serial port for EE controller
-        ser.write(b'H')
-        ser.close()
-        #TODO Test
+        self.ser.write(b'H')
+        time.sleep(4)
 
     def stop(self): #method of invoking halt from Goto_test
         for motor in self.motors:

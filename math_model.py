@@ -1,8 +1,8 @@
 import numpy as np
 
 spool_radius = 0.5
-plat_l = 5 #5 if Platform, 0 if gimbal mount
-plat_w = 3.75 #3.75 if Platform, 0 if gimbal mount
+plat_l = .5 #5 if Platform, 0 if gimbal mount
+plat_w = .5 #3.75 if Platform, 0 if gimbal mount
 anchor_pos = np.array([[-23.5, 20, 8.75], [23.5, 20, 8.75],
                     [23.5, 20, -8.75], [-23.5, 20, -8.75]])
 
