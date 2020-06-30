@@ -1,0 +1,42 @@
+'''
+Stacking automation script
+Given size, spacing, and box pattern will produce goto_test
+script with appropriate coordinates
+'''
+
+#TODO tune 3s and 5s to reflect distance between point mount and gripping paddles\
+#TODO test
+
+import numpy as np
+
+#inputs, box size as (L, H, W)
+Box_size = np.asarray((1, 1, 1))
+Space = np.asarray((1, 1))
+Box_patt = np.asarray((2, 2, 2))
+BotLeft_pos = np.asarray((13, 0, 2))
+Stage_pos = np.asarray((-13, 0, 0))
+
+#Generate Goto_test script for pattern of unifrom boxes
+StackScript = open(r"StackScript", "w") #open target ext file for automated script
+StackScript.write("cdpr.release_ser()\n")
+for y in range(Box_patt[1]):
+    for x in range(Box_patt[0]):
+        for z in range(Box_patt[2]):
+            #Pick
+            StackScript.write(
+                F"cdpr.goto(({Stage_pos[0]}, {Box_size[1] + 5}, {Stage_pos[2]}), accel, relative=False)\n")
+            StackScript.write(
+                F"cdpr.goto(({Stage_pos[0]}, {Box_size[1] + 3}, {Stage_pos[2]}), accel, relative=False)\n")
+            StackScript.write("cdpr.grab_ser()\n")
+            StackScript.write(
+                F"cdpr.goto(({Stage_pos[0]}, {Box_size[1] + 5}, {Stage_pos[2]}), accel, relative=False)\n")
+            #Place
+            StackScript.write(
+                F"cdpr.goto(({BotLeft_pos[0] + x * (Box_size[0] + Space[0])}, {y * Box_size[1] + 5}, {BotLeft_pos[2] + z * (Box_size[2] + Space[1])}), accel, relative=False)\n")
+            StackScript.write(
+                F"cdpr.goto(({BotLeft_pos[0] + x * (Box_size[0] + Space[0])}, {y * Box_size[1] + 3}, {BotLeft_pos[2] + z * (Box_size[2] + Space[1])}), accel, relative=False)\n")
+            StackScript.write("cdpr.release_ser()\n")
+            StackScript.write(
+                F"cdpr.goto(({BotLeft_pos[0] + x * (Box_size[0] + Space[0])}, {y * Box_size[1] + 5}, {BotLeft_pos[2] + z * (Box_size[2] + Space[1])}), accel, relative=False)\n")
+#Back home
+StackScript.write(F"cdpr.goto((0, 4, 0), accel, relative=False)\n")
