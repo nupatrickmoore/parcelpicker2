@@ -1,5 +1,5 @@
 import c5e
-from math_model import BB_movement
+from math_model import BB_movement, SVA_movement
 import logging
 import canopen
 import time
@@ -15,6 +15,7 @@ class CDPR():
     def __init__(self):
         #initialise can network
         self.ser = serial.Serial('COM8', 9800, timeout=1)  # open serial port for EE controller
+        self._state = 0
         self.network = canopen.Network()     # define network
         self.network.connect(channel='PCAN_USBBUS1', bustype='pcan', bitrate=1000000)  # establish communication
         self.network.check()
@@ -26,6 +27,7 @@ class CDPR():
         self.network.sync.start(0.1)
 
         self._position = (0, 4, 0) #TODO home
+        self._SVA_pos = 0          #TODO SVA home
 
     def __del__(self):
         #shuts down when destroyed
@@ -44,6 +46,8 @@ class CDPR():
         
     def goto(self, position, accel_max, relative=True, blocking=True):
 
+        if self._state == 1:
+            raise Exception("goto called in SVA mode. Must undock to execute goto")
         #determine movement to make, absolute or relative
         init_pos = self._position
         if relative:
@@ -65,6 +69,24 @@ class CDPR():
 
         while(not self.is_at_target() and blocking):
             time.sleep(0.001) #idle checking at 1khz
+
+    def SVA_move(self, position, accel_max, blocking=True):
+        if self._state == 0:
+            raise Exception("SVA_move called outside of SVA mode. Must dock to execute SVA_move")
+        init_pos = self._SVA_pos
+        end_pos = position
+        self._position = end_pos
+
+        rel_pos_int, motor_speed_int, motor_accel, motor_deccel, cycle_time = SVA_movement(init_pos, end_pos, accel_max)
+        logging.info("Moving with cycle time of: %.2f" % cycle_time)
+
+        for idx, motor in enumerate(self.motors):
+            motor.goto(rel_pos_int[idx], relative=True, blocking=False, speed=motor_speed_int[idx],
+                       acceleration=motor_accel[idx], deceleration=motor_deccel[idx])
+
+        while (not self.is_at_target() and blocking):
+            time.sleep(0.001)  # idle checking at 1khz
+    # TODO test
 
     def is_at_target(self):
         for motor in self.motors:
@@ -105,3 +127,25 @@ class CDPR():
     def torq_report(self): #reports each motor torque
         for motor in self.motors:
             print(motor.get_torque())
+
+    def dock(self):
+        if self._state == 1:
+            raise Exception("dock called when in SVA mode, already docked into SCA mode")
+        self.goto((-12, 20, 0), 50, relative=False)
+        print("M1")
+        self.goto((-18, 20, 0), 50, relative=False)
+        print("M2")
+        self.goto((-18, 19, 0), 50, relative=False)
+        print("M3")
+        self._state = 1
+        print(self._state)
+    #TODO test
+
+    def undock(self):
+        if self._state == 0:
+            raise Exception("undock called when not in SVA mode, already undocked")
+        self.SVA_move(0, 50)
+        self._state = 0
+        self.goto((-18, 20, 0), 50, relative=False)
+        self.goto((-12, 20, 0), 50, relative=False)
+    # TODO test
