@@ -119,7 +119,7 @@ def SVA_movement(int_vert_pos, end_vert_pos, accel_max):
 if __name__ == '__main__':#will only run if the file is specificall ran, not imported
     #rel_pos_int, motor_speed_int = oneshot_movement((1, 1, 1), (2, 2, 2), 1.5)
     #print(rel_pos_int, motor_speed_int)
-    rel_pos_int, motor_speed_int, motor_accel, motor_deccel, cycle_time = SVA_movement((0), (-10), 150)
+    rel_pos_int, motor_speed_int, motor_accel, motor_deccel, cycle_time = SVA_movement(0, -10, 150)
     print(rel_pos_int, motor_speed_int, motor_accel, motor_deccel, cycle_time)
 
     
